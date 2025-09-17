@@ -1,0 +1,131 @@
+#include <iostream>
+#include <cstring>
+#include <cctype>
+using namespace std;
+
+struct Simbolo {
+    char nombre[50];      // Nombre del token
+    char tipo[20];        // Tipo: TipoDato, Identificador, Operador, Número
+    char tipoDato[20];    // Tipo de dato real (int, float, char, string)
+};
+
+Simbolo tabla[200];
+int total = 0;
+
+void agregarSimbolo(const char* nombre,const char* tipo,const char* tipoDato){
+    strcpy(tabla[total].nombre, nombre);
+    strcpy(tabla[total].tipo, tipo);
+    strcpy(tabla[total].tipoDato, tipoDato);
+    total++;
+}
+
+int buscar(const char* nombre){
+    for(int i=0;i<total;i++)
+        if(strcmp(tabla[i].nombre,nombre)==0)
+            return i;
+    return -1;
+}
+
+bool esTipoBasico(const char* t){
+    return strcmp(t,"int")==0 || strcmp(t,"float")==0
+        || strcmp(t,"char")==0 || strcmp(t,"string")==0;
+}
+
+bool esNumero(const char* s){
+    bool punto=false;
+    for(int i=0;s[i];i++){
+        if(s[i]=='.'){
+            if(punto) return false;
+            punto=true;
+        }else if(!isdigit((unsigned char)s[i])) return false;
+    }
+    return true;
+}
+
+void procesarDeclaracion(char* linea){
+    char* token = strtok(linea," ,;");
+    if(!token) return;
+
+    char tipoBase[20];
+
+    // si es tipo básico se usa directamente
+    if(esTipoBasico(token)){
+        agregarSimbolo(token,"TipoDato",token);
+        strcpy(tipoBase,token);
+    } else {
+        // tipo inventado: preguntar tipo base
+        cout << "El tipo \""<< token 
+             << "\" no es básico. Ingresa su tipo base (int/float/char): ";
+        cin >> tipoBase;
+        agregarSimbolo(token,"TipoDato",tipoBase);
+    }
+
+    token = strtok(NULL," ,;");
+    while(token){
+        agregarSimbolo(token,"Identificador",tipoBase);
+        token = strtok(NULL," ,;");
+    }
+}
+
+void procesarExpresion(char* linea){
+    for(int i=0;linea[i];){
+        if(isspace((unsigned char)linea[i])){ i++; continue; }
+
+        if(strchr("+-*/=()",linea[i])){
+            char op[2] = { linea[i], '\0' };
+            if(linea[i]=='+'||linea[i]=='-')
+                agregarSimbolo(op,"Operador","Nivel 1");
+            else if(linea[i]=='*'||linea[i]=='/')
+                agregarSimbolo(op,"Operador","Nivel 2");
+            else if(linea[i]=='=')
+                agregarSimbolo(op,"Operador","Asignacion");
+            else
+                agregarSimbolo(op,"Operador","Otro");
+            i++;
+        }
+        else if(isalnum((unsigned char)linea[i]) || linea[i]=='_'){
+            char tok[50]; int j=0;
+            while(isalnum((unsigned char)linea[i]) || linea[i]=='_')
+                tok[j++] = linea[i++];
+            tok[j] = '\0';
+
+            if(esNumero(tok)){
+                if(strchr(tok,'.'))
+                    agregarSimbolo(tok,"Número","Flotante");
+                else
+                    agregarSimbolo(tok,"Número","Entero");
+            } else {
+                int idx = buscar(tok);
+                if(idx>=0)
+                    agregarSimbolo(tok,"Identificador",tabla[idx].tipoDato);
+                else
+                    agregarSimbolo(tok,"Identificador","indefinido");
+            }
+        } else i++;
+    }
+}
+
+int main(){
+    // Puedes editar o leer estas líneas desde archivo si quieres
+    char Codigo[2][100] = {
+        "perro x, y;",       // perro es alias que preguntará tipo base
+        "x = y + 2 * 3;"
+    };
+
+    char linea1[100];
+    strcpy(linea1,Codigo[0]);
+    procesarDeclaracion(linea1);
+
+    char linea2[100];
+    strcpy(linea2,Codigo[1]);
+    procesarExpresion(linea2);
+
+    cout << "\nToken\t\tTipo\t\tTipoDato\n";
+    cout << "-------------------------------------------\n";
+    for(int i=0;i<total;i++){
+        cout << tabla[i].nombre << "\t\t"
+             << tabla[i].tipo << "\t\t"
+             << tabla[i].tipoDato << "\n";
+    }
+    return 0;
+}
