@@ -1,39 +1,86 @@
 #include <iostream>
-#include <cctype>  // isalpha, isdigit
-#include <cstring> // strlen
+#include <cstring> // Incluido por si acaso, aunque no es estrictamente necesario para este ejemplo
 
-// Definimos niveles de precedencia
-int nivelPrecedencia(char op) {
-    if(op == '*' || op == '/') return 2;
-    if(op == '+' || op == '-') return 1;
+using namespace std;
+
+// Estructura para las variables
+struct Variable {
+    char nombre[50];
+    int tipo_serial; // Referencia al numero serial del tipo de dato
+    int variable_serial;
+};
+
+// Estructura para los tipos de datos
+struct TipoDeDato {
+    char nombre[50];
+    char identificador; // Por ejemplo, 'i' para int, 'f' para float
+    int tipo_serial;
+};
+
+// Estructura para las operaciones
+struct Operacion {
+    char nombre[50];
+    char simbolo;
+    int nivel; // Nivel de precedencia
+};
+
+// Variables globales para los arreglos dinámicos
+Variable* variables = nullptr;
+TipoDeDato* tipos_datos = nullptr;
+Operacion* operaciones = nullptr;
+
+// Contadores de elementos
+int num_variables = 0;
+int num_tipos_datos = 0;
+int num_operaciones = 0;
+
+// Funciones para gestionar los arreglos dinámicos
+void agregarVariable(const char* nombre, int tipo_serial);
+void agregarTipoDeDato(const char* nombre, char identificador);
+void agregarOperacion(const char* nombre, char simbolo, int nivel);
+void mostrarDatos();
+void liberarMemoria();
+
+int main() {
+    // Ejemplo de uso de las funciones
+    agregarTipoDeDato("entero", 'i');
+    agregarTipoDeDato("flotante", 'f');
+    agregarTipoDeDato("cadena", 's');
+
+    agregarVariable("edad", 0); // El serial 0 corresponde a "entero"
+    agregarVariable("pi", 1); // El serial 1 corresponde a "flotante"
+    agregarVariable("nombre", 2); // El serial 2 corresponde a "cadena"
+
+    agregarOperacion("asignacion", '=', 1);
+    agregarOperacion("suma", '+', 2);
+    agregarOperacion("multiplicacion", '*', 3);
+
+    mostrarDatos();
+
+    // Editar un elemento (ejemplo)
+    operaciones[0].nivel = 10;
+    cout << "\nNivel de la operacion 'asignacion' ha sido actualizado a: " << operaciones[0].nivel << endl;
+
+    liberarMemoria();
+
     return 0;
 }
 
-int main() {
-    // Expresión aritmética
-    std::string expr = "a+b*c-d/2";
+void agregarVariable(const char* nombre, int tipo_serial) {
+    Variable* nuevo_variables = new Variable[num_variables + 1];
 
-    // Guardamos la expresión dinámicamente usando un apuntador
-    char* ptrExpr = new char[expr.size() + 1]; // +1 para '\0'
-    std::strcpy(ptrExpr, expr.c_str());
-
-    std::cout << "Expresion guardada en apuntador: " << ptrExpr << std::endl;
-
-    std::cout << "\nTokens encontrados:\n";
-    for (size_t i = 0; i < strlen(ptrExpr); i++) {
-        char c = ptrExpr[i];
-        if (std::isalpha(c)) {
-            std::cout << "Variable: " << c << std::endl;
-        } else if (c == '+' || c == '-' || c == '*' || c == '/') {
-            std::cout << "Operador: " << c
-                      << " | Nivel: " << nivelPrecedencia(c) << std::endl;
-        } else if (std::isdigit(c)) {
-            std::cout << "Número: " << c << std::endl;
-        }
+    // Copiar los datos existentes
+    for (int i = 0; i < num_variables; ++i) {
+        nuevo_variables[i] = variables[i];
     }
 
-    // Liberamos memoria
-    delete[] ptrExpr;
+    // Agregar el nuevo elemento
+    strcpy(nuevo_variables[num_variables].nombre, nombre);
+    nuevo_variables[num_variables].tipo_serial = tipo_serial;
+    nuevo_variables[num_variables].variable_serial = num_variables;
 
-    return 0;
+    // Liberar memoria antigua y actualizar el puntero
+    delete[] variables;
+    variables = nuevo_variables;
+    num_variables++;
 }
